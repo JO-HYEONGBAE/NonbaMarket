@@ -1,0 +1,10 @@
+# vi .gitignore src
+/
+main
+/
+java
+/
+admin
+/
+admin
+/* !.gitkeep
