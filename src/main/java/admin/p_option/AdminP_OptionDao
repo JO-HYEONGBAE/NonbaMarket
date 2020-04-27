@@ -1,28 +1,19 @@
-package com.spring.admin.order.vo;
+package com.spring.admin.p_option.dao;
 
+import java.util.List;
 
-import com.spring.admin.common.vo.AdminCommonVO;
+import com.spring.admin.p_option.vo.AdminP_OptionVO;
 
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+public interface AdminP_OptionDao {
 
-@Data
-@EqualsAndHashCode(callSuper = false)
-public class AdminOrdersVO extends AdminCommonVO{
-
-	private int o_num;
-	private int m_num;
-	private String o_name;
-	private String o_address;
-	private String o_phone;
-	private String o_method;
-	private String o_deliver;
-	private String o_allprice;
-	private String o_invoice;
-	private String o_regdate;
-	private int i_num;
-	private int o_usepoint;
-	private String deliver[];
+	public int optionInsert(AdminP_OptionVO avo);
 	
+	public List<AdminP_OptionVO> optionList(long p_num);
+	
+	public int optionDelete(Integer op_num);
+	
+	public int productoptionDelete(List<Long> p_num);
+	
+	public List<Integer> searchOp_num(List<Long> p_num);
 	
 }
