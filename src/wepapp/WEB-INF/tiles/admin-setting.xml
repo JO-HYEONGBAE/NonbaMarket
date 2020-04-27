@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+  "-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+  "http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+  
+<tiles-definitions>
+	<definition name="content" template="/WEB-INF/views/template/admin/contentLayout.jsp">
+		<put-attribute name="title" value="하이퍼 마켓"/>
+		<put-attribute name="aside" value="/WEB-INF/views/template/admin/aside.jsp"/>
+		<put-attribute name="header" value="/WEB-INF/views/template/admin/header.jsp"/>
+		<put-attribute name="body" value=""/>
+		<put-attribute name="footer" value="/WEB-INF/views/template/admin/footer.jsp"/>
+	</definition>
+	
+	<definition name="adminMain/*" extends="content">
+		<put-attribute name="title" value="관리자 페이지"/>
+		<put-attribute name="body" value="/WEB-INF/views/adminMain/{1}.jsp"/>
+	</definition>
+	<definition name="adminProduct/*" extends="content">
+		<put-attribute name="title" value="상품 페이지"/>
+		<put-attribute name="body" value="/WEB-INF/views/adminProduct/{1}.jsp"/>
+	
+	</definition>
+	<definition name="adminOrders/*" extends="content">
+		<put-attribute name="title" value="주문 관리 페이지"/>
+		<put-attribute name="body" value="/WEB-INF/views/adminOrders/{1}.jsp"/>
+	
+	</definition>
+	
+	<definition name="adminMember/*" extends="content">
+		<put-attribute name="title" value="고객 관리 페이지"/>
+		<put-attribute name="body" value="/WEB-INF/views/adminMember/{1}.jsp"/>
+	
+	</definition>
+	
+	<definition name="adminDetail/*" extends="content">
+		<put-attribute name="title" value="통계 분석 페이지"/>
+		<put-attribute name="body" value="/WEB-INF/views/adminDetail/{1}.jsp"/>
+	
+	</definition>
+	
+	
+</tiles-definitions>
