@@ -4,6 +4,4 @@ JAVA, SQL, jQuery, ajax, jsp, javaScript, Spring, Oracle DB / Eclipse, SQLDevelo
 
 -진행기간 : 20/03/09 ~ 20/04/03
 
--참여인원 : 안상진, 조형배, 김승규, 서희민, 원동희
-
 -파일 설명 .Document - 각종 문서 소스, 코드 소스, 참고 자료 .ReadMe - 실행파일(결과물), PPT문서(문서 내용 정리)
