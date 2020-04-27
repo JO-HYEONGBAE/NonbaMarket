@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.mid_category.dao.AdminMid_CategoryDao">
+
+<select id="midList" parameterType="adminmid" resultType="adminmid">
+	select mc_num,mc_name,mc_display,lc_num from mid_category 
+	where lc_num=#{lc_num}
+</select>
+
+
+<select id="midAllList" parameterType="adminmid" resultType="adminmid">
+	select rnum,mc_num,mc_name,mc_display,lc_num from (
+	select /*+ Index_desc(mid_category mc_pk) */
+	rownum as rnum,mc_num,mc_name,mc_display,lc_num
+	from mid_category
+	<![CDATA[
+	where rownum <= #{pageNum} * #{amount}
+	)list
+	where rnum > (#{pageNum}-1) * #{amount}
+	]]>
+</select>
+
+
+<select id="midNum" parameterType="int" resultType="int">
+ select nvl(max(to_number(substr(mc_num,4)))+1,100) from mid_category
+    where lc_num=#{lc_num}
+</select>
+
+<insert id="midInsert" parameterType="adminmid">
+   
+    INSERT INTO mid_category (
+    mc_num,
+    lc_num,
+    mc_name,
+    mc_display
+	) VALUES (
+    #{mc_num},
+    #{lc_num},
+    #{mc_name},
+    #{mc_display}
+)
+</insert>
+
+
+<delete id="deleteMidCategory" parameterType="java.util.List">
+	delete from mid_category
+	<if test="list.size!=0">
+	where mc_num in	
+	<foreach collection="list" item="item" separator="," open="(" close=")">
+		#{item.value}
+	</foreach>
+</if>
+</delete>
+
+<select id="searchMc_num" parameterType="java.util.List" resultType="int">
+	select mc_num from mid_category
+	<if test="list.size!=0">
+		 where lc_num in
+		<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+			#{item.value}
+	</foreach>
+</if>
+
+</select>
+
+<update id="updateMidCategory" parameterType="adminmid">
+ update mid_category
+ set mc_name=#{mc_name} , mc_display=#{mc_display} where mc_num=#{mc_num}
+</update>
+
+
+<select id="midCountList" resultType="int">
+select count(*) from mid_category
+</select>
+
+
+
+</mapper>
+
