@@ -1,0 +1,39 @@
+package com.spring.admin.product.service;
+
+import java.util.List;
+
+import com.spring.admin.p_option.vo.AdminP_OptionVO;
+import com.spring.admin.product.vo.AdminProductVO;
+
+public interface AdminProductService {
+
+	public AdminProductVO productStatus();
+	
+	public List<AdminProductVO > productList(AdminProductVO avo);
+
+	public List<AdminProductVO > productExcel(AdminProductVO avo);
+	
+	public List<AdminProductVO > lowList(Integer mc_num);
+	
+	
+	public int productInsert(AdminProductVO avo);
+	
+	public String productMix(Integer mc_num);
+	
+	public int optionInsert(AdminP_OptionVO avo);
+	
+	public List<AdminP_OptionVO> optionList(long p_num);
+	
+	public int optionDelete(Integer p_num);
+	
+	public int countProductList(AdminProductVO avo);
+	
+	public int deleteProduct(List<Long> p_num);
+	
+	public int productoptionDelete(List<Long> p_num);
+	
+	public List<Long> searchP_num(List<Integer> lc_num);
+	
+	public List<Integer> searchOp_num(List<Long> p_num);
+}
+
