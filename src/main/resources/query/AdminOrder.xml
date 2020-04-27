@@ -1,0 +1,794 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.order.dao.AdminOrdersDao">
+	<sql id="ordersList">
+	
+		<if test="search=='number'">
+			<![CDATA[ and o_num like '%'||#{keyword}||'%']]>
+		</if>
+		<if test="search=='name'">
+			<![CDATA[ and o_name like '%'||#{keyword}||'%']]>
+		</if>
+		<choose>
+			
+			<when test="m_num==1">
+			 and m_num is not null
+			</when>
+			<when test="m_num==2">
+			 and m_num is null
+			</when>
+			<otherwise>
+			</otherwise>
+			
+		</choose>
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+		<if test="deliver!=null">
+	<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+	o_deliver like '%'||#{item}||'%'
+	</foreach>
+		</if>
+
+	</sql>
+	
+	
+	
+	
+	<select id="orderTotal"  resultType="adminorder">
+	select (select nvl(count(o_deliver),0) from orders where o_deliver= '배송준비중') ready,
+		(select count(o_deliver) from orders where o_deliver='배송중') ship,
+		(select count(o_deliver) from orders where o_deliver='취소신청' or o_deliver='취소처리중') canceling,
+		(select count(o_deliver) from orders where o_deliver='교환신청' or o_deliver='교환처리중') exchange,
+		(select count(o_deliver) from orders where o_deliver='환불신청') refund
+	from dual
+	</select>
+
+
+
+
+	<select id="orderSales" resultType="adminorder">
+	select to_char(sysdate,'mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as total,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd') and o_deliver in('배송준비중','배송완료','배송중')) as pay,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd') and o_deliver in('취소신청','취소처리중','취소완료','교환완료','교환신청','교환처리중','환불신청','환불처리중','환불')) as cancel
+		from dual
+		union
+		
+		select to_char(sysdate-1,'mm-dd'),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')  and o_deliver in('배송준비중','배송완료','배송중')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd') and o_deliver in('취소신청','취소처리중','취소완료','교환완료','교환신청','교환처리중','환불신청','환불처리중','환불완료')) 
+		
+		from dual
+		union
+		
+		select to_char(sysdate-2,'mm-dd'),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd') and o_deliver in('배송준비중','배송완료','배송중')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd') and o_deliver in('취소신청','취소처리중','취소완료','교환완료','교환신청','교환처리중','환불신청','환불처리중','환불완료')) 
+		from dual
+		union
+		
+		select to_char(sysdate-3,'mm-dd'),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd') and o_deliver in('배송준비중','배송완료','배송중')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd') and o_deliver in('취소신청','취소처리중','취소완료','교환완료','교환신청','교환처리중','환불신청','환불처리중','환불완료')) 
+		from dual
+		union
+		
+		select to_char(sysdate-4,'mm-dd'),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd') and o_deliver in('배송준비중','배송완료','배송중')),
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd') and o_deliver in('취소신청','취소처리중','취소완료','교환완료','교환신청','교환처리중','환불신청','환불처리중','환불완료')) 
+		from dual
+		order by 1 desc
+	
+	</select>
+	
+	
+	
+	
+	
+	<select id="orderMonth" parameterType="java.lang.String" resultType="adminorder">
+		select sum(m1) jan, sum(m2) feb, sum(m3) mar, sum(m4) apr,sum(m5) may,
+				sum(m6) jun, sum(m7) jul, sum(m8) aug,sum(m9) sep, sum(m10) oct, sum(m11) nov, sum(m12) dec 
+				from(select 
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-01',sum(o_allprice), 0) m1,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-02', sum(o_allprice), 0) m2,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-03', sum(o_allprice), 0) m3,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-04', sum(o_allprice), 0) m4, 
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-05', sum(o_allprice), 0) m5,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-06', sum(o_allprice), 0) m6, 
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-07', sum(o_allprice), 0) m7, 
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-08', sum(o_allprice), 0) m8,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-09', sum(o_allprice), 0) m9,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-10', sum(o_allprice), 0) m10,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-11', sum(o_allprice), 0) m11,
+				decode(to_char(o_regdate, 'yyyy-mm'), #{year}||'-12', sum(o_allprice), 0) m12  
+				from  orders group by to_char(o_regdate, 'yyyy-mm'))
+	</select>
+	
+	
+	
+	
+	<select id="ordersList" parameterType="adminorder" resultType="adminorder">
+		<![CDATA[
+		select rnum,o_num,o_name,o_address,o_phone,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate 
+	from (select /*+ INDEX_desc(orders order_pk) */
+	rownum as rnum,o_num,o_name,o_address,o_phone,o_deliver,o_allprice,o_invoice,o_regdate
+	from orders where rownum <= #{pageNum}*#{amount}
+		]]>
+		<include refid="ordersList"></include>
+		<![CDATA[
+	) orderlist
+	where rnum > (#{pageNum}-1)*#{amount}
+	]]>
+	</select>
+	
+	<update id="invoiceInsert" parameterType="adminorder">
+	update orders
+	set o_invoice=#{o_invoice} where o_num=#{o_num}
+	</update>
+	
+	<update id="deliverUpdate" parameterType="adminorder">
+	update orders
+	set o_deliver=#{o_deliver} where o_invoice=#{o_invoice}
+	</update>
+	
+	
+	
+	
+	
+	<select id="ordersExcel" parameterType="adminorder" resultType="adminorder">
+		select /*+ INDEX_desc(orders order_pk) */
+		o_num,o_name,o_address,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,
+		to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate
+		from orders
+			<if test="search=='number'">
+			<![CDATA[ where o_num like '%'||#{keyword}||'%']]>
+		</if>
+		<if test="search=='name'">
+			<![CDATA[ where o_name like '%'||#{keyword}||'%']]>
+		</if>
+		<choose>
+			
+			<when test="m_num==1">
+			 and m_num is not null
+			</when>
+			<when test="m_num==2">
+			 and m_num is null
+			</when>
+			<otherwise>
+			</otherwise>
+			
+		</choose>
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+		<if test="deliver !=null">
+	<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+	o_deliver like '%'||#{item}||'%'
+	</foreach>
+		</if>
+			
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="countOrdersList" parameterType="adminorder" resultType="int">
+			
+		select count(*) cnt
+		from orders
+			<if test="search=='number'">
+			<![CDATA[ where o_num like '%'||#{keyword}||'%']]>
+			</if>
+				<if test="search=='name'">
+					<![CDATA[ where o_name like '%'||#{keyword}||'%']]>
+				</if>
+				<choose>
+					
+					<when test="m_num==1">
+					 and m_num is not null
+					</when>
+					<when test="m_num==2">
+					 and m_num is null
+					</when>
+					<otherwise>
+					</otherwise>
+					
+				</choose>
+					<choose>
+						<when test="startdate==''">
+						</when>
+						<when test="startdate!='전체'">
+					 and o_regdate between #{startdate} and #{enddate}
+						</when>
+						<otherwise></otherwise>
+				</choose>
+				<if test="deliver !=null">
+			<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+			o_deliver like '%'||#{item}||'%'
+			</foreach>
+			</if>
+			
+	</select>
+	
+	<select id="ordersState" parameterType="adminorder" resultType="adminorder">
+		select (select count(*) from orders where o_deliver='배송준비중')as ready,
+		(select count(*) from orders where o_deliver='배송중')as ing,
+		(select count(*) from orders where o_deliver='배송완료')as finish
+		from dual
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="deliveryList" parameterType="adminorder" resultType="adminorder">
+		<![CDATA[
+		select rnum,o_num,o_name,o_address,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate 
+	from (
+    select list.*, rownum as rnum from
+    (select 
+    o.o_num,o_name,o_address,o_deliver,o_allprice,o_invoice,o_regdate 
+    from orders o, detail d 
+    where o.o_num=d.o_num and o_deliver like '%배송%'
+		]]>
+		<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+	</choose>	
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+    <![CDATA[
+    )list
+	where rownum <=#{pageNum}*#{amount})
+	where rnum> (#{pageNum}-1)*#{amount} order by rnum desc
+    ]]>
+	</select>
+	
+	
+	
+	
+	
+	
+	
+	<select id="deliveryCountList" parameterType="adminorder" resultType="int">
+		select count(*) cnt
+		from orders o ,detail d
+		where o.o_num=d.o_num and o_deliver like '%배송%'
+		
+			<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+	</choose>	
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="deliveryExcel" resultType="adminorder" parameterType="adminorder">
+	select 
+    o.o_num,o_name,o_address,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate 
+    from orders o, detail d 
+    where o.o_num=d.o_num and o_deliver like '%배송%'
+		
+		<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+	</choose>	
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+	
+	</select>
+	
+	
+	
+	
+	<select id="helpState" resultType="adminorder" parameterType="adminorder">
+		select (select count(*) from orders where o_deliver like '%취소%')as cancel,
+		(select count(*) from orders where o_deliver like '%교환%')as exchange,
+		(select count(*) from orders where o_deliver like '%환불%')as refund
+		from dual
+	
+	</select>
+	
+	
+	
+	
+	
+	
+	<select id="helpList" parameterType="adminorder" resultType="adminorder">
+		<![CDATA[
+		select rnum,o_num,o_name,o_address,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate 
+	from (
+    select list.*, rownum as rnum from
+    (select 
+    o.o_num,o_name,o_address,o_deliver,o_allprice,o_invoice,o_regdate 
+    from orders o, detail d 
+    where o.o_num=d.o_num and o_deliver not like '%배송%'
+		]]>
+		<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+	</choose>	
+	<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+	<if test="deliver !=null">
+			<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+			o_deliver like '%'||#{item}||'%'
+			</foreach>
+	</if>
+    <![CDATA[
+    )list
+	where rownum <=#{pageNum}*#{amount})
+	where rnum> (#{pageNum}-1)*#{amount} order by rnum desc
+    ]]>
+	</select>
+	
+	
+	
+	
+	<select id="helpCountList" parameterType="adminorder" resultType="int">
+	select 
+    	count(*) cnt
+    from orders o, detail d 
+    where o.o_num=d.o_num and o_deliver not like '%배송%'
+    
+		<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+		<otherwise></otherwise>
+	</choose>	
+	
+			<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise>
+				</otherwise>
+			</choose>
+			
+			<if test="deliver!=null">
+			<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+			o_deliver like '%'||#{item}||'%'
+			</foreach>
+			</if>
+	</select>
+	
+	
+	<select id="helpExcel" parameterType="adminorder" resultType="adminorder">
+		select 
+	    o.o_num,o_name,o_address,o_deliver,to_char(o_allprice,'999,999,999') o_allprice,o_invoice,to_char(o_regdate,'yyyy-mm-dd HH24:MM') o_regdate 
+	    from orders o, detail d 
+	    where o.o_num=d.o_num and o_deliver not like '%배송%'
+	    
+		<if test="search=='name'">
+    <![CDATA[ and o_name like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search=='number'">
+    <![CDATA[ and o.o_num like '%'||#{keyword}||'%' ]]>
+		</if>
+		<if test="search2=='name'">
+    <![CDATA[ and d.d_name like '%'||#{keyword2}||'%' ]]>
+		</if>
+		<if test="search2=='number'">
+    <![CDATA[ and d.p_num like '%'||#{keyword2}||'%' ]]>
+		</if>
+	
+	<choose>
+		<when test="m_num==1">
+			and m_num is not null				
+		</when>
+		<when test="m_num==2">
+			and m_num is null				
+		</when>
+		<otherwise></otherwise>
+	</choose>	
+	
+			<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and o_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise>
+				</otherwise>
+			</choose>
+			
+			<if test="deliver!=null">
+			<foreach collection="deliver" item="item" index="index" open="and (" close=")" separator="or">
+			o_deliver like '%'||#{item}||'%'
+			</foreach>
+			</if>
+	</select>
+	
+	<select id="dayList" parameterType="adminorder" resultType="adminorder">
+	        
+		select 
+		
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as six,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as five,
+        (select  nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as four,
+        (select  nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as three,
+        (select  nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as two,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as one,
+        (select  nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as today
+        
+
+		from dual
+	
+	</select>
+	
+	<select id="weekList" parameterType="adminorder" resultType="adminorder">
+	 select 
+     (select nvl(sum(o_allprice),0) 
+     FROM orders 
+     WHERE to_char(o_regdate,'mm-dd')  between to_char(sysdate-7,'mm-dd') and  to_char(sysdate-1,'mm-dd')) oneweek ,
+     (select nvl(sum(o_allprice),0) 
+     FROM orders 
+     WHERE to_char(o_regdate,'mm-dd')  between to_char(sysdate-14,'mm-dd') and  to_char(sysdate-8,'mm-dd')) twoweek,
+     (select nvl(sum(o_allprice),0) 
+     FROM orders 
+     WHERE to_char(o_regdate,'mm-dd')  between to_char(sysdate-21,'mm-dd') and  to_char(sysdate-15,'mm-dd')) threeweek,
+     (select nvl(sum(o_allprice),0) 
+     FROM orders 
+     WHERE to_char(o_regdate,'mm-dd')  between to_char(sysdate-28,'mm-dd') and  to_char(sysdate-22,'mm-dd')) fourweek
+     
+     from dual
+        
+	</select>
+	
+	<select id="daycheckList"   resultType="adminorder">
+		
+	select to_char(sysdate,'yyyy-mm-dd') as regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as ordercnt,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as usepoint,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd')) as totalsum,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate,'mm-dd') and o_deliver like '%환불%') as totalrefund
+        
+        
+		from dual
+                
+        union
+      select to_char(sysdate-1,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-1,'mm-dd') and o_deliver like '%환불%') as 환불합계
+        from dual
+         union
+         
+       select to_char(sysdate-2,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-2,'mm-dd') and o_deliver like '%환불%') as 환불합계
+        from dual
+         union
+         
+       select to_char(sysdate-3,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-3,'mm-dd') and o_deliver like '%환불%') as 환불합계
+        from dual
+         union
+        select to_char(sysdate-4,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-4,'mm-dd') and o_deliver like '%환불%') as 환불합계
+        from dual
+         union
+        select to_char(sysdate-5,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-5,'mm-dd') and o_deliver like '%환불%') as 환불합계
+        from dual
+        union
+       select to_char(sysdate-6,'yyyy-mm-dd') as o_regdate,
+		(select count(o_deliver) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as 주문수,
+		(select count(o_name) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as 품목수,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as 판매금액,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as 포인트,
+       (select nvl(sum(o_usepoint),0)+nvl(sum(o_allprice),0)FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd')) as 결제합계,
+       (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'mm-dd')=to_char(sysdate-6,'mm-dd') and o_deliver like '%환불%') as 환불합계
+       	 from dual
+	
+	</select>
+	
+	<select id="weekcheckList" resultType="adminorder">
+	    select to_char(TRUNC(sysdate, 'iw'),'yyyy-mm-dd') as startdate , to_char(trunc(sysdate,'iw')+7,'yyyy-mm-dd') as  enddate, 
+       (select count(o_deliver) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd')) as ordercnt,
+       (select count(o_name) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd')) as usepoint,
+       
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd') ) as totalsum,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw'), 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +7, 'yyyy-mm-dd')and o_deliver like '%환불%' ) as totalrefund 
+        
+        from dual group by to_char(TRUNC(sysdate, 'iw'),'yyyy-mm-dd'), to_char(trunc(sysdate,'iw')+7,'yyyy-mm-dd') 
+        union
+        select to_char(TRUNC(sysdate, 'iw')-7,'yyyy-mm-dd') as startdate , to_char(trunc(sysdate,'iw') -1,'yyyy-mm-dd') as  enddate, 
+         (select count(o_deliver) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd') ),
+         (select count(o_name) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd')) as usepoint,
+       
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd') ) as 결제,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-7, 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -1, 'yyyy-mm-dd')and o_deliver like '%환불%' ) as 환불 
+        
+        from dual group by to_char(TRUNC(sysdate, 'iw')-7,'yyyy-mm-dd'), to_char(trunc(sysdate,'iw') -1,'yyyy-mm-dd') 
+        union
+       select   to_char(TRUNC(sysdate, 'iw') - 14,'yyyy-mm-dd') , to_char(trunc(sysdate,'iw')-8,'yyyy-mm-dd'), 
+        (select count(o_deliver) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-14 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -8, 'yyyy-mm-dd') ),
+        (select count(o_name) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-14 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -8, 'yyyy-mm-dd')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-14 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -8, 'yyyy-mm-dd')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-14 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -8, 'yyyy-mm-dd')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') - 14, 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') - 8, 'yyyy-mm-dd') ) as 결제,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') - 14, 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') - 8, 'yyyy-mm-dd')and o_deliver like '%환불%' ) as 환불 
+        
+        from dual group by to_char(TRUNC(sysdate, 'iw') - 14,'yyyy-mm-dd'), to_char(trunc(sysdate,'iw')-8,'yyyy-mm-dd') 
+        union
+         select   to_char(TRUNC(sysdate, 'iw') - 21,'yyyy-mm-dd') , to_char(trunc(sysdate,'iw')-15,'yyyy-mm-dd'), 
+          (select count(o_deliver) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-21 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') +15, 'yyyy-mm-dd') ),
+          (select count(o_name) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-21 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -15, 'yyyy-mm-dd')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-21 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -15, 'yyyy-mm-dd')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw')-21 , 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') -15, 'yyyy-mm-dd')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') - 21, 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') - 15, 'yyyy-mm-dd') ) as 결제,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(o_regdate,'yyyy-mm-dd') between TO_CHAR(TRUNC(sysdate, 'iw') - 21, 'yyyy-mm-dd') and TO_CHAR(TRUNC(sysdate, 'iw') - 15, 'yyyy-mm-dd')and o_deliver like '%환불%' ) as 환불 
+        
+        from dual group by to_char(TRUNC(sysdate, 'iw') - 21,'yyyy-mm-dd'), to_char(trunc(sysdate,'iw')-15,'yyyy-mm-dd')
+	</select>
+	
+	<select id="monthcheckList" resultType="adminorder">
+		  select to_char(add_months(sysdate,-0),'yyyy-mm') regdate,
+    (select count(o_deliver) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) ordercnt,
+          (select count(o_name) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm') ) as totalsum,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(sysdate,'yyyy-mm') =to_char(o_regdate,'yyyy-mm') and o_deliver like '%환불%' ) as totalrefund
+        
+    from dual
+    
+    
+    union
+    select to_char(add_months(sysdate,-1),'yyyy-mm') regdate,
+    (select count(o_deliver) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) ordercnt,
+          (select count(o_name) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') ) as totalsum,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-1),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') and o_deliver like '%환불%' ) as totalrefund
+        
+    from dual
+     union
+    select to_char(add_months(sysdate,-2),'yyyy-mm') regdate,
+    (select count(o_deliver) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) ordercnt,
+          (select count(o_name) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') ) as totalsum,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-2),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') and o_deliver like '%환불%' ) as totalrefund
+        
+    from dual
+     union
+    select to_char(add_months(sysdate,-3),'yyyy-mm') regdate,
+    (select count(o_deliver) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) ordercnt,
+          (select count(o_name) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as stockcnt,
+		(select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as totalsell,
+        (select nvl(sum(o_usepoint),0) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm')) as usepoint,
+        (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') ) as totalsum,
+         (select nvl(sum(o_allprice),0) FROM orders WHERE to_char(add_months(sysdate,-3),'yyyy-mm') =to_char(o_regdate,'yyyy-mm') and o_deliver like '%환불%' ) as totalrefund
+        
+    from dual
+	</select>
+	
+	<select id="rankcntProudct" parameterType="adminorder" resultType="adminorder">
+	select 
+       d.d_name name,count(d_name)cnt,
+	 rank()over (order by count(d_name) desc) as rank from orders o ,detail d where o.o_num=d.d_num  
+        <![CDATA[ and rownum<=10 ]]>
+        
+        <choose>
+        	<when test="startdate==''">
+        	</when>
+        	<when test="startdate!='전체'">
+        		and o_regdate between #{startdate} and #{enddate}
+        	</when>
+        	<otherwise>
+        	</otherwise>
+        </choose>
+      	
+      	<choose>
+      		<when test="startprice!='' and endprice!=''">
+      			having sum(o_allprice) between #{startprice} and #{endprice}
+      		</when>
+      		<when test="startprice!='' and endprice==''">
+      			having sum(o_allprice) <![CDATA[ >= #{startprice}]]>
+      		</when> 
+      		<when test="startprice=='' and endprice!=''">
+      		having sum(o_allprice) <![CDATA[ <= #{endprice}]]>
+      		</when>
+      	
+      	</choose>
+         group by d.d_name
+	
+	</select>
+	
+	
+	<select id="ranksumProudct" parameterType="adminorder" resultType="adminorder">
+	select d.d_name name,sum(o_allprice)sum,
+        rank()over (order by sum(o_allprice) desc) as rank from orders o ,detail d where o.o_num=d.d_num 
+        <![CDATA[ and rownum<=10 ]]>
+      <choose>
+			<when test="startdate==''">
+			</when>
+			<when test="startdate!='전체'">
+		 	and o.o_regdate between #{startdate} and #{enddate}
+			</when>
+			<otherwise></otherwise>
+		</choose>
+      	
+      	<choose>
+      		<when test="startprice!='' and endprice!=''">
+      		having sum(o_allprice) between #{startprice} and #{endprice}
+      		</when>
+      		<when test="startprice!='' and endprice==''">
+      			having sum(o_allprice) <![CDATA[ >= #{startprice}]]>
+      		</when> 
+      		<when test="startprice=='' and endprice!=''">
+      		having sum(o_allprice) <![CDATA[ <= #{endprice}]]>
+      		</when>
+      	
+      	</choose>
+      	 group by d.d_name 
+	
+	</select>
+</mapper>
+   
