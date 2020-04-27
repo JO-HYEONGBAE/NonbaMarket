@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.p_option.dao.AdminP_OptionDao">
+
+<insert id="optionInsert" parameterType="adminoption">
+
+insert into p_option(op_num,p_num,op_name,op_price,op_sale,op_stock)
+values(p_option_seq.nextval,#{p_num},#{op_name},#{op_price},#{op_sale},#{op_stock})
+</insert>
+
+
+<select id="optionList" parameterType="adminoption" resultType="adminoption">
+	select * from p_option where p_num=#{p_num}
+</select>
+
+<delete id="optionDelete" parameterType="adminoption" >
+delete from p_option where op_num=#{op_num}
+
+</delete>
+
+<delete id="productoptionDelete" parameterType="java.util.List">
+delete from p_option 
+<choose>
+	<when test="list.size !=0">
+		where p_num in
+		<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+		#{item.value}
+		
+		</foreach>
+	</when>
+</choose>
+</delete>
+
+<select id="searchOp_num" parameterType="java.util.List" resultType="int">
+
+	select op_num from p_option
+			where p_num in
+	<if test="list.size!=0">
+		<foreach collection="list" item="item" separator="," open="(" close=")">
+		#{item.value}
+		</foreach>
+	</if>
+</select>
+
+
+
+
+</mapper>
