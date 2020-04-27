@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.detail.dao.AdminDetailDao">
+
+<select id="ordersList" parameterType="admindetail" resultType="admindetail">
+select d_num,o.o_name as name ,o.o_num as ordernum,d_name,d_img,o.o_invoice as invoice,
+to_char(d_price,'999,999') d_price,to_char(o_regdate,'yyyy-mm-dd') As regdate, 
+
+o_deliver as deliver from detail d,orders o where d.o_num=o.o_num order by d_num asc
+</select>
+</mapper>
