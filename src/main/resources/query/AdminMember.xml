@@ -1,0 +1,334 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.member.dao.AdminMemberDao">
+
+<select id="memberList" parameterType="adminmember" resultType="adminmember">
+
+<![CDATA[
+
+select m_num,m_id,m_name,m_phone,age,m_email,m_birth,allprice,m_regdate,g_name,m_point
+from(
+select list.*,rownum as rnum 
+from(
+select m_num, 
+
+substr(m_id,1,3)||lpad('*',length(m_id)-2,'*') m_id, 
+
+rpad(rpad(substr(m_name,0,1),length(m_name),'*'),length(m_name)+2,substr(m_name,length(m_name))) m_name,
+
+
+rpad(substr(m_phone,1,length(m_phone)-4),length(m_phone),'*')m_phone, 
+
+trunc(months_between(trunc(sysdate),to_date(m_birth,'yyyymmdd'))/12) age,
+
+substr(m_email,1,3)||lpad('*',length(instr(m_email,'@'))+3,'*')||substr(m_email,instr(m_email,'@')) m_email,
+
+m_birth,nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999')) as allprice,
+
+to_char(m_regdate,'yyyy-mm-dd') m_regdate,
+
+g_name,m_point
+
+from member m , grade g
+
+where m.g_num = g.g_num and m_withdraw is null
+
+]]>
+<if test="search=='id'">
+	and m_id like '%'||#{keyword}||'%'
+</if>
+<if test="search=='name'">
+	and m_name like '%'||#{keyword}||'%'
+</if>
+<if test="search=='email'">
+	and m_email like '%'||#{keyword}||'%'
+</if>
+<if test="search=='phone'">
+	and m_phone like '%'||#{keyword}||'%'
+</if>
+<choose>
+<when test="startprice!='' and endprice!=''">
+	<![CDATA[
+	and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+	
+	between to_char(#{startprice},'999,999,999') and to_char(#{endprice},'999,999,999')
+	]]>
+</when>
+
+<when test="startprice!='' and endprice==''">
+	<![CDATA[
+	and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+	
+	>=to_char(#{startprice},'999,999,999')
+	]]>
+</when>
+<when test="startprice=='' and endprice!=''">
+	<![CDATA[
+	and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+	
+	<=to_char(#{endprice},'999,999,999')
+	]]>
+</when>
+
+</choose>
+<choose>
+		<when test="startdate==''">
+		</when>
+		
+		<when test="startdate!='전체'">
+		 and m_regdate between #{startdate} and #{enddate}
+		</when>
+		
+		<otherwise></otherwise>
+</choose>
+
+<choose>
+			
+	<when test="m_smssend==1">
+	 and m_smssend='O'
+	</when>
+	<when test="m_smssend==2">
+	and m_smssend='X'
+	</when>
+	<otherwise>
+	</otherwise>
+			
+</choose>
+
+<choose>
+			
+	<when test="m_emailsend==1">
+	 and m_emailsend='O'
+	</when>
+	<when test="m_emailsend==2">
+	and m_emailsend='X'
+	</when>
+	<otherwise>
+	</otherwise>
+			
+</choose>
+
+<![CDATA[
+group by m_num, m_id, m_name, m_phone, trunc(months_between(trunc(sysdate),to_date(m_birth,'yyyymmdd'))/12), 
+
+months_between(trunc(sysdate),to_date(m_birth,'yyyymmdd'))/12, trunc(sysdate), sysdate, to_date(m_birth,'yyyymmdd'), m_birth, 
+
+'yyyymmdd', 12, months_between(trunc(sysdate),to_date(m_birth,'yyyymmdd'))/12, trunc(sysdate), sysdate, 
+
+to_date(m_birth,'yyyymmdd'), rpad(rtrim(m_id,substr(m_id,4)),length(m_id),'*'), 'yyyymmdd', 12, trunc(sysdate), 
+
+sysdate, sysdate, to_date(m_birth,'yyyymmdd'), m_birth, 'yyyymmdd', 
+
+m_birth, 'yyyymmdd', 12, m_email, m_birth, 
+
+m_regdate, g_name, m_point, rpad(rpad(substr(m_name,0,1),length(m_name),'*'),length(m_name)+2,substr(m_name,length(m_name))), rpad(substr(m_name,0,1),length(m_name),'*'), 
+
+substr(m_name,0,1), m_name, 0, 1, length(m_name), 
+
+m_name, '*', length(m_name)+2, m_name, rpad(substr(m_phone,1,length(m_phone)-4),length(m_phone),'*'), 
+
+2, substr(m_name,length(m_name)), m_name, length(m_name), m_name, 
+
+rpad(rpad(rtrim(m_email,substr(m_email,4)),length(rpad(m_email,instr(m_email,'@')-1)),'*'), length(rpad(m_email,instr(m_email,'@')-1))+length(substr(m_email,instr(m_email,'@'))),substr(m_email,instr(m_email,'@'))), rpad(rtrim(m_email,substr(m_email,4)),length(rpad(m_email,instr(m_email,'@')-1)),'*'), rtrim(m_email,substr(m_email,4)), m_email, substr(m_email,4), 
+
+m_email, 4, length(rpad(m_email,instr(m_email,'@')-1)), rpad(m_email,instr(m_email,'@')-1), m_email, 
+
+instr(m_email,'@')-1, m_email, '@', 1, '*', 
+
+length(rpad(m_email,instr(m_email,'@')-1))+length(substr(m_email,instr(m_email,'@'))), rpad(m_email,instr(m_email,'@')-1), m_email, instr(m_email,'@')-1, m_email, 
+
+'@', 1, length(substr(m_email,instr(m_email,'@'))), substr(m_email,instr(m_email,'@')), m_email, 
+
+instr(m_email,'@'), m_email, '@', substr(m_email,instr(m_email,'@')), m_email, 
+
+instr(m_email,'@'), m_email, '@')list
+
+where rownum <=#{pageNum}*#{amount})
+
+where rnum> (#{pageNum}-1)*#{amount} order by rnum desc
+
+
+
+]]>
+</select>
+
+<select id="countMemberList" parameterType="adminmember" resultType="int">
+	select count(*) cnt from member m , grade g where m.g_num=g.g_num and m_withdraw is null
+	
+	<if test="search=='id'">
+		and m_id like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='name'">
+		and m_name like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='email'">
+		and m_email like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='phone'">
+		and m_phone like '%'||#{keyword}||'%'
+	</if>
+	<choose>
+	<when test="startprice!='' and endprice!=''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		between to_char(#{startprice},'999,999,999') and to_char(#{endprice},'999,999,999')
+		]]>
+	</when>
+	
+	<when test="startprice!='' and endprice==''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		>=to_char(#{startprice},'999,999,999')
+		]]>
+	</when>
+	<when test="startprice=='' and endprice!=''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		<=to_char(#{endprice},'999,999,999')
+		]]>
+	</when>
+	
+	</choose>
+	<choose>
+			<when test="startdate==''">
+			</when>
+			
+			<when test="startdate!='전체'">
+			 and m_regdate between #{startdate} and #{enddate}
+			</when>
+			
+			<otherwise></otherwise>
+	</choose>
+	
+	<choose>
+				
+		<when test="m_smssend==1">
+		 and m_smssend='O'
+		</when>
+		<when test="m_smssend==2">
+		and m_smssend='X'
+		</when>
+		<otherwise>
+		</otherwise>
+				
+	</choose>
+	
+	<choose>
+				
+		<when test="m_emailsend==1">
+		 and m_emailsend='O'
+		</when>
+		<when test="m_emailsend==2">
+		and m_emailsend='X'
+		</when>
+		<otherwise>
+		</otherwise>
+				
+	</choose>
+	
+	</select>
+	
+	<select id="memberExcel" parameterType="adminmember" resultType="adminmember">
+		select m_num, 
+
+		substr(m_id,1,3)||lpad('*',length(m_id)-2,'*') m_id, 
+		
+		rpad(rpad(substr(m_name,0,1),length(m_name),'*'),length(m_name)+2,substr(m_name,length(m_name))) m_name,
+		
+		
+		rpad(substr(m_phone,1,length(m_phone)-4),length(m_phone),'*')m_phone, 
+		
+		trunc(months_between(trunc(sysdate),to_date(m_birth,'yyyymmdd'))/12) age,
+		
+		substr(m_email,1,3)||lpad('*',length(instr(m_email,'@'))+3,'*')||substr(m_email,instr(m_email,'@')) m_email,
+		
+		m_birth,nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999')) as allprice,
+		
+		to_char(m_regdate,'yyyy-mm-dd') m_regdate,
+		
+		g_name,m_point
+		
+		from member m , grade g
+		
+		where m.g_num = g.g_num and m_withdraw is null
+		
+		<if test="search=='id'">
+		and m_id like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='name'">
+		and m_name like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='email'">
+		and m_email like '%'||#{keyword}||'%'
+	</if>
+	<if test="search=='phone'">
+		and m_phone like '%'||#{keyword}||'%'
+	</if>
+	<choose>
+	<when test="startprice!='' and endprice!=''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		between to_char(#{startprice},'999,999,999') and to_char(#{endprice},'999,999,999')
+		]]>
+	</when>
+	
+	<when test="startprice!='' and endprice==''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		>=to_char(#{startprice},'999,999,999')
+		]]>
+	</when>
+	<when test="startprice=='' and endprice!=''">
+		<![CDATA[
+		and nvl((select to_char(sum(o_allprice),'999,999,999') FROM orders WHERE m_num=m.m_num ),to_char(0,'999,999,999'))
+		
+		<=to_char(#{endprice},'999,999,999')
+		]]>
+	</when>
+	
+	</choose>
+	<choose>
+			<when test="startdate==''">
+			</when>
+			
+			<when test="startdate!='전체'">
+			 and m_regdate between #{startdate} and #{enddate}
+			</when>
+			
+			<otherwise></otherwise>
+	</choose>
+	
+	<choose>
+				
+		<when test="m_smssend==1">
+		 and m_smssend='O'
+		</when>
+		<when test="m_smssend==2">
+		and m_smssend='X'
+		</when>
+		<otherwise>
+		</otherwise>
+				
+	</choose>
+	
+	<choose>
+				
+		<when test="m_emailsend==1">
+		 and m_emailsend='O'
+		</when>
+		<when test="m_emailsend==2">
+		and m_emailsend='X'
+		</when>
+		<otherwise>
+		</otherwise>
+				
+	</choose>
+	
+	
+	</select>
+</mapper>
