@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.login.dao.AdminLoginDao">
+
+<select id="adminCheck" parameterType="adminlogin" resultType="int">
+ select nvl((select 1 from admin where a_id=#{a_id} and a_pwd=#{a_pwd}),0)cnt from dual
+</select>
+
+<select id="adminInfo" parameterType="adminlogin" resultType="adminlogin">
+
+select a_num,a_name,a_nickname,a_id ,a_regdate from admin where a_id=#{a_id} and a_pwd=#{a_pwd}
+</select>
+
+</mapper>
