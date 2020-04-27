@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.large_category.dao.AdminLarge_CategoryDao">
+
+<select id="largeList" resultType="adminlarge">
+	select
+	<![CDATA[ /*+INDEX_asc(large_category lc_pk) */]]> 
+	lc_num,lc_name,lc_display from large_category 
+</select>
+
+<select id="largeNum" resultType="int">
+	select nvl(max(lc_num)+100,100) as large from large_category
+</select>
+
+<insert id="largeInsert" parameterType="adminlarge">
+
+	INSERT INTO large_category (
+	    lc_num,
+	    lc_name,
+	    lc_display
+	) VALUES (
+	    #{lc_num},
+	    #{lc_name},
+	    #{lc_display}
+	)
+</insert>
+
+<delete id="deleteLargeCategory" parameterType="java.util.List">
+	delete from large_category
+	
+	<choose>
+	<when test="list.size!=0">
+	where lc_num in
+		<foreach collection="list" item="item" open="(" close=")" separator=",">
+		#{item.value}
+		</foreach>
+	</when> 
+	</choose>
+
+</delete>
+
+<update id="updateLargeCategory" parameterType="adminlarge">
+update large_category
+set lc_name=#{lc_name} , lc_display=#{lc_display} where lc_num=#{lc_num}
+</update>
+</mapper>
