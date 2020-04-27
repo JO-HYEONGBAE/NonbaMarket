@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+	<typeAliases>
+		<typeAlias type="com.spring.admin.login.vo.AdminLoginVO" alias="admin"/>
+		
+		<typeAlias type="com.spring.admin.order.vo.AdminOrdersVO" alias="adminorder"/>
+		
+		<typeAlias type="com.spring.admin.product.vo.AdminProductVO" alias="adminproduct"/>
+		
+		<typeAlias type="com.spring.admin.large_category.vo.AdminLarge_CategoryVO" alias="adminlarge"/>
+		
+		<typeAlias type="com.spring.admin.mid_category.vo.AdminMid_CategoryVO" alias="adminmid"/>
+		
+		<typeAlias type="com.spring.admin.p_option.vo.AdminP_OptionVO" alias="adminoption"/>
+		
+		<typeAlias type="com.spring.admin.detail.vo.AdminDetailVO" alias="admindetail"/>
+		
+		<typeAlias type="com.spring.admin.member.vo.AdminMemberVO" alias="adminmember"/>
+		
+		<typeAlias type="com.spring.admin.login.vo.AdminLoginVO" alias="adminlogin"/>
+	</typeAliases>
+</configuration>
