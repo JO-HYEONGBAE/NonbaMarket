@@ -1,0 +1,222 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.spring.admin.product.dao.AdminProductDao">
+<sql id="productSearch">
+	<if test="search=='number'">
+			<![CDATA[ and p_num like '%'||#{keyword}||'%']]>
+		</if>
+		<if test="search=='name'">
+			<![CDATA[ and p_name like '%'||#{keyword}||'%']]>
+		</if>
+		<choose>
+		<when test="lc_num!=0 and mc_num!=0 and p_num!=0 ">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num} and p.p_num=#{p_num}]]>
+		</when>
+		<when test="lc_num!=0 and mc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num}]]>
+		</when>
+		<when test="lc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num}]]>
+		</when>
+		</choose>
+		<choose>
+			<when test="p_display=='전체'">
+			</when>
+			<when test="p_display=='진열'">
+				and p.p_display='O'
+			</when>
+			<when test="p_display=='진열안함'">
+				and p.p_display='X'
+			</when>
+		</choose>
+		<choose>
+			<when test="p_stock==0">
+			</when>
+			<when test="p_stock==2">
+				and p_stock=0
+			</when>
+			<when test="p_stock==1">
+				<![CDATA[ and p_stock>0 ]]>
+			</when>
+		</choose>
+		<choose>
+				<when test="startdate==''">
+				</when>
+				<when test="startdate!='전체'">
+			 and p_regdate between #{startdate} and #{enddate}
+				</when>
+				<otherwise></otherwise>
+		</choose>
+</sql>
+
+<select id="productStatus" resultType="adminproduct">
+	select (select count(*) from product ) total ,(select count(*) from product where p_display='O' ) sell ,(select count(*) from product where p_stock=0) stock 
+from dual
+</select>
+
+<select id="productList" parameterType="adminproduct" resultType="adminproduct">
+<!-- 
+	select p.p_num,p.p_name,to_char(p.p_price,'999,999') p_price,p.p_img,to_char(p.p_regdate,'yyyy-mm-dd') p_regdate,p_stock,p_display,lc.lc_name large,mc.mc_name mid
+		from product p, large_category lc, mid_category mc
+		where p.lc_num=lc.lc_num and p.mc_num=mc.mc_num
+		
+		<if test="search=='number'">
+			<![CDATA[ and p_num like '%'||#{keyword}||'%']]>
+		</if>
+		<if test="search=='name'">
+			<![CDATA[ and p_name like '%'||#{keyword}||'%']]>
+		</if>
+		<choose>
+		<when test="lc_num!=0 and mc_num!=0 and p_num!=0 ">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num} and p.p_num=#{p_num}]]>
+		</when>
+		<when test="lc_num!=0 and mc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num}]]>
+		</when>
+		<when test="lc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num}]]>
+		</when>
+		</choose>
+		<choose>
+			<when test="p_display=='전체'">
+			</when>
+			<when test="p_display=='진열'">
+				and p.p_display='O'
+			</when>
+			<when test="p_display=='진열안함'">
+				and p.p_display='X'
+			</when>
+		</choose>
+		<choose>
+			<when test="p_stock==100">
+			</when>
+			<when test="p_stock==0">
+				and p_stock=0
+			</when>
+			<when test="p_stock==1">
+				<![CDATA[ and p_stock>0 ]]>
+			</when>
+		</choose>
+		<choose>
+			<when test="startdate==''">
+			</when>
+				<when test="startdate!='전체'">
+			 and p_regdate between #{startdate} and #{enddate}
+				</when>
+		</choose> -->
+		select p_num,p_name ,p_price,p_name ,p_img, p_regdate ,p_price,p_regdate,p_stock,p_display,large,mid
+		from (
+		select list.*, rownum as rnum from (
+ 		select p.p_num,p.p_name,to_char(p.p_price,'999,999') p_price,p.p_img,to_char(p.p_regdate,'yyyy-mm-dd') 
+   		 p_regdate,p_stock,p_display,lc.lc_name large,mc.mc_name mid
+		from product p, large_category lc, mid_category mc
+		where p.lc_num=lc.lc_num and p.mc_num=mc.mc_num 
+		<include refid="productSearch"></include>
+       <![CDATA[ order by p_num desc) list
+		where rownum<=#{pageNum}*#{amount}) 
+		where rnum> (#{pageNum}-1) *#{amount}]]>
+</select>
+
+<select id="countProductList" parameterType="adminproduct" resultType="int" >
+		
+		 select count(*) cnt
+		from product p, large_category lc, mid_category mc
+		where p.lc_num=lc.lc_num and p.mc_num=mc.mc_num
+		<include refid="productSearch"></include>
+		
+	
+	<!--
+		 select count(*) cnt
+		from product p, large_category lc, mid_category mc
+		where p.lc_num=lc.lc_num and p.mc_num=mc.mc_num
+		<if test="search=='number'">
+			<![CDATA[ and p_num like '%'||#{keyword}||'%']]>
+		</if>
+		<if test="search=='name'">
+			<![CDATA[ and p_name like '%'||#{keyword}||'%']]>
+		</if>
+		<choose>
+		<when test="lc_num!=0 and mc_num!=0 and p_num!=0 ">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num} and p.p_num=#{p_num}]]>
+		</when>
+		<when test="lc_num!=0 and mc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num} and mc.mc_num=#{mc_num}]]>
+		</when>
+		<when test="lc_num!=0">
+			<![CDATA[ and lc.lc_num=#{lc_num}]]>
+		</when>
+		</choose>
+		<choose>
+			<when test="p_display=='전체'">
+			</when>
+			<when test="p_display=='진열'">
+				and p.p_display='O'
+			</when>
+			<when test="p_display=='진열안함'">
+				and p.p_display='X'
+			</when>
+		</choose>
+		<choose>
+			<when test="p_stock==100">
+			</when>
+			<when test="p_stock==0">
+				and p_stock=0
+			</when>
+			<when test="p_stock==1">
+				<![CDATA[ and p_stock>0 ]]>
+			</when>
+		</choose>
+		<choose>
+			<when test="startdate==''">
+			</when>
+				<when test="startdate!='전체'">
+			 and p_regdate between #{startdate} and #{enddate}
+				</when>
+		</choose> -->
+</select>
+
+<select id="lowList" parameterType="adminproduct" resultType="adminproduct">
+	select p_num,p_name from product where mc_num=#{mc_num}
+</select>
+<select id="productMix" parameterType="adminproduct" resultType="java.lang.String">
+select nvl(lpad(max(to_number(ltrim(substr(p_num,6),'0')))+1,4,'0'),'0001') from product where mc_num =#{mc_num}
+</select>
+
+<insert id="productInsert" parameterType="adminproduct">
+INSERT INTO product ( p_num, lc_num,mc_num, p_name, p_price, p_explain_img, p_img, p_option,
+ sales_unit, p_weight, p_origin, p_announce, p_stock, p_sale, p_display
+)values(#{p_num},#{lc_num},#{mc_num},#{p_name},#{p_price},#{p_explain_img},
+#{p_img},#{p_option},#{sales_unit},#{p_weight},#{p_origin},#{p_announce},#{p_stock},#{p_sale},#{p_display})
+</insert>
+
+<delete  id="deleteProduct" parameterType="java.util.List">
+delete from product where
+<choose>
+<when test="list.size !=0">
+		p_num in
+		<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+		#{item.value}
+		</foreach>
+</when>
+</choose>
+</delete>
+
+<select id="productExcel" parameterType="adminproduct" resultType="adminproduct">
+		select p.p_num,p.p_name,to_char(p.p_price,'999,999') p_price,p.p_img,to_char(p.p_regdate,'yyyy-mm-dd') p_regdate,p_stock,p_display,lc.lc_name large,mc.mc_name mid
+		from product p, large_category lc, mid_category mc
+		where p.lc_num=lc.lc_num and p.mc_num=mc.mc_num
+		<include refid="productSearch"></include>
+</select>
+
+
+<select id="searchP_num" parameterType="java.util.List" resultType="int">
+select p_num from product
+<if test="list.size!=0">
+	 where lc_num in
+	<foreach collection="list" item="item" index="index" separator="," open="(" close=")">
+		#{item.value}
+	</foreach>
+</if>
+</select>
+
+</mapper>
