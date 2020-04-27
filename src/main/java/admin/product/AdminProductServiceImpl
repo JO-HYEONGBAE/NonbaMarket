@@ -1,0 +1,130 @@
+package com.spring.admin.product.service;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.spring.admin.p_option.dao.AdminP_OptionDao;
+import com.spring.admin.p_option.vo.AdminP_OptionVO;
+import com.spring.admin.product.dao.AdminProductDao;
+import com.spring.admin.product.vo.AdminProductVO;
+import com.spring.common.file.FileUploadUtil;
+
+import lombok.Setter;
+
+@Service
+public class AdminProductServiceImpl implements AdminProductService{
+
+	@Setter(onMethod_ =@Autowired)
+	private AdminProductDao adminProductDao;
+	
+	@Setter(onMethod_ =@Autowired)
+	private AdminP_OptionDao adminP_OptionDao;
+	
+	public AdminProductVO productStatus() {
+		AdminProductVO avo =adminProductDao.productStatus();
+		
+		return avo;
+	}
+	
+	public List<AdminProductVO> productList(AdminProductVO avo){
+		
+		List<AdminProductVO> list= adminProductDao.productList(avo);
+		
+		return list;
+	}
+	
+	public List<AdminProductVO > lowList(Integer mc_num){
+		List<AdminProductVO> list= adminProductDao.lowList(mc_num);
+		
+		return list;
+	}
+	
+	public int productInsert(AdminProductVO avo) {
+		int result=0;
+		try {
+			if(avo.getFile()!=null && avo.getFile2()!=null) {
+				String fileName=FileUploadUtil.fileUpload(avo.getFile(), "p_img");
+				avo.setP_img(fileName);
+				
+				String file2Name=FileUploadUtil.fileUpload(avo.getFile2(), "p_explain_img");
+				avo.setP_explain_img(file2Name);
+			}
+				result = adminProductDao.productInsert(avo);
+		}catch(Exception e) {
+			e.printStackTrace();
+		}
+		return result;
+	}
+	
+	public String productMix(Integer mc_num) {
+		String result = adminProductDao.productMix(mc_num);
+		
+		return result;
+	}
+	
+	
+	public int optionInsert(AdminP_OptionVO avo) {
+		int result=0;
+		
+		result = adminP_OptionDao.optionInsert(avo);
+		return result;
+	}
+	
+	
+	public List<AdminP_OptionVO> optionList(long p_num){
+		List<AdminP_OptionVO> list = adminP_OptionDao.optionList(p_num);
+		
+		return list;
+	}
+	
+	public int optionDelete(Integer op_num) {
+		int result = adminP_OptionDao.optionDelete(op_num);
+		
+		return result;
+	}
+	
+	public int countProductList(AdminProductVO avo) {
+		int result=adminProductDao.countProductList(avo);
+		return result;
+	}
+	
+	public int deleteProduct(List<Long> p_num) {
+		int result=0;
+		result=adminProductDao.deleteProduct(p_num);
+		
+		return result;
+	}
+	
+	public int productoptionDelete(List<Long> p_num) {
+		int result=0;
+		result=adminP_OptionDao.productoptionDelete(p_num);
+		return result;
+	}
+
+	@Override
+	public List<AdminProductVO> productExcel(AdminProductVO avo) {
+
+		List<AdminProductVO> list= adminProductDao.productExcel(avo);
+		
+		return list;
+	}
+	
+	public List<Long> searchP_num(List<Integer> lc_num) {
+		
+		List<Long> p_num=adminProductDao.searchP_num(lc_num);
+		
+		return p_num;
+	}
+
+	
+	
+	@Override
+	public List<Integer> searchOp_num(List<Long> p_num) {
+		
+		List<Integer> op_num=adminP_OptionDao.searchOp_num(p_num);
+		
+		return op_num;
+	}
+}
